@@ -130,21 +130,21 @@ float gnoise31(vec3 p){
 void main(){
     vec2 pos = gl_FragCoord.xy/min(u_resolution.x, u_resolution.y);
     pos = 20.0 * pos + u_time;
-    channel = ivec2(2.0 * gl_FragCoord.xy / u_resolution.xy);
+    channel = ivec2(2.0 * gl_FragCoord.xy / u_resolution.xy);//ビューポートを上下左右に分割して4チャンネル
     float v;
     if (channel[0] == 0){
         if (channel[1] == 0){
-            v = vnoise21(pos);
+            v = vnoise21(pos);// 2変数の値ノイズ
         } else {
-            v = vnoise31(vec3(pos, u_time));
+            v = vnoise31(vec3(pos, u_time));// 3変数の値ノイズ
         }
     } else{
         if (channel[1] == 0){
-            v = gnoise21(pos);
+            v = gnoise21(pos);// 2変数の勾配ノイズ
         } else {
-            v = gnoise31(vec3(pos, u_time));
+            v = gnoise31(vec3(pos, u_time));// 3変数の勾配ノイズ
         }
     }
-    fragColor.rgb = hsv2rgb(vec3(v, 1.0, 1.0));
+    fragColor.rgb = hsv2rgb(vec3(v, 1.0, 1.0));// 色相をノイズ値によって変化させる
     fragColor.a = 1.0;
 }

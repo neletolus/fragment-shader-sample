@@ -6,13 +6,13 @@ uniform float u_time;
 uniform vec2 u_resolution;
 int channel;
 
-vec2[4] diag = vec2[](    // 0.70710678 = 1.0 / sqrt(2.0)
+vec2[4] diag = vec2[]( // 対角線方向に制限した4つの勾配
     vec2(0.70710678,0.70710678),
     vec2(-0.70710678,0.70710678),
     vec2(0.70710678,-0.70710678),
     vec2(-0.70710678,-0.70710678)
 );
-vec2[4] axis = vec2[](
+vec2[4] axis = vec2[](// 軸方向に制限した4つの勾配
     vec2(1, 0),
     vec2(-1, 0),
     vec2(0, 1),

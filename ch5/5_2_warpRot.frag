@@ -7,7 +7,7 @@ uniform vec2 u_resolution;
 int channel;
 const float PI = 3.1415926;
 
-//start hash
+//begin hash
 uvec3 k = uvec3(0x456789abu, 0x6789ab45u, 0x89ab4567u);
 uvec3 u = uvec3(1, 2, 3);
 const uint UINT_MAX = 0xffffffffu;
@@ -54,72 +54,68 @@ vec3 hash33(vec3 p){
 }
 //end hash
 
+//begin vnoise
+float vnoise21(vec2 p){
+    vec2 n = floor(p);
+    float[4] v;
+    for (int j = 0; j < 2; j ++){
+        for (int i = 0; i < 2; i++){
+            v[i+2*j] = hash21(n + vec2(i, j));
+        }
+    }
+    vec2 f = fract(p);
+    f = f * f * f * (10.0 - 15.0 * f + 6.0 * f * f);
+    return mix(mix(v[0], v[1], f[0]), mix(v[2], v[3], f[0]), f[1]);
+}
+//end vnoise
 
-//begin rot
-vec2 rot2(vec2 p, float t){
-    return vec2(cos(t) * p.x -sin(t) * p.y, sin(t) * p.x + cos(t) * p.y); //pの回転
+//begin pnoise
+float gtable2(vec2 lattice, vec2 p){
+    uvec2 n = floatBitsToUint(lattice);
+    uint ind = uhash22(n).x >> 29;
+    float u = 0.92387953 * (ind < 4u ? p.x : p.y);  //0.92387953 = cos(pi/8)
+    float v = 0.38268343 * (ind < 4u ? p.y : p.x);  //0.38268343 = sin(pi/8)
+    return ((ind & 1u) == 0u ? u : -u) + ((ind & 2u) == 0u? v : -v);
 }
-// x軸による回転
-vec3 rotX(vec3 p, float t){
-    p.yz = rot2(p.yz, t);
-    return p;
-}
-// y軸による回転
-vec3 rotY(vec3 p, float t){
-    p.xz = rot2(p.xz, t);
-    return p;
-}
-// z軸による回転
-vec3 rotZ(vec3 p, float t){
-    p.xy = rot2(p.xy, t);
-    return p;
-}
-//end rot
-
-float rotNoise21(vec2 p, float ang){ // angは回転角度
+float pnoise21(vec2 p){
     vec2 n = floor(p);
     vec2 f = fract(p);
     float[4] v;
     for (int j = 0; j < 2; j ++){
         for (int i = 0; i < 2; i++){
-            vec2 g = normalize(hash22(n + vec2(i,j)) - vec2(0.5));//勾配の取得
-            g = rot2(g, ang);//勾配の回転
-            v[i+2*j] = dot(g, f - vec2(i, j));
+            v[i+2*j] = gtable2(n + vec2(i, j), f - vec2(i, j));
         }
     }
     f = f * f * f * (10.0 - 15.0 * f + 6.0 * f * f);
     return 0.5 * mix(mix(v[0], v[1], f[0]), mix(v[2], v[3], f[0]), f[1]) + 0.5;
 }
-float rotNoise31(vec3 p, float ang){
-    vec3 n = floor(p);
-    vec3 f = fract(p);
-    float[8] v;
-    for (int k = 0; k < 2; k++ ){
-        for (int j = 0; j < 2; j++ ){
-            for (int i = 0; i < 2; i++){
-                vec3 g = normalize(hash33(n + vec3(i, j, k)) - vec3(0.5));
-                g = rotZ(g, ang);
-                v[i+2*j+4*k] = dot(g, f - vec3(i, j, k));
-            }
-        }
-    }
-    f = f * f * f * (10.0 - 15.0 * f + 6.0 * f * f);
-    float[2] w;
-    for (int i = 0; i < 2; i++){
-        w[i] = mix(mix(v[4*i], v[4*i+1], f[0]), mix(v[4*i+2], v[4*i+3], f[0]), f[1]);
-    }
-    return 0.5 * mix(w[0], w[1], f[2]) + 0.5;
-}
+//end pnoise
 
+float fbm21(vec2 p, float g){
+    float val = 0.0;
+    float amp = 1.0;
+    float freq = 1.0;
+    for (int i = 0; i < 4; i++){
+        val += amp * (vnoise21(freq * p) - 0.5);
+        amp *= g;
+        freq *= 2.01;
+    }
+    return 0.5 * val + 0.5;
+}
+float base21(vec2 p){
+    return channel == 0 ? fbm21(p, 0.5) : 
+        pnoise21(p);
+}
+float warp21(vec2 p, float g){
+    float val = 0.0;
+    for (int i = 0; i < 4; i++){
+        val = base21(p + g * vec2(cos(2.0 * PI * val), sin(2.0 * PI * val)));// ノイズで回転
+    }
+    return val;
+}
 void main(){
     vec2 pos = gl_FragCoord.xy/min(u_resolution.x, u_resolution.y);
-    channel = int(gl_FragCoord.x * 2.0 / u_resolution.x);
+    channel = int(2.0 * gl_FragCoord.x / u_resolution.x);
     pos = 10.0 * pos + u_time;
-    if (channel < 1){
-        fragColor = vec4(rotNoise21(pos, u_time));  //right
-    } else {
-        fragColor = vec4(rotNoise31(vec3(pos, u_time), u_time));
-        
-    }
-    fragColor.a = 1.0;
+    fragColor = vec4(vec3(warp21(pos, 1.0)), 1.0);
 }

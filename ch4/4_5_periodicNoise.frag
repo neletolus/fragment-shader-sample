@@ -32,13 +32,13 @@ float gtable2(vec2 lattice, vec2 p){
     float v = 0.38268343 * (ind < 4u ? p.y : p.x);  //0.38268343 = sin(pi/8)
     return ((ind & 1u) == 0u ? u : -u) + ((ind & 2u) == 0u? v : -v);
 }
-float periodicNoise21(vec2 p, float period){
+float periodicNoise21(vec2 p, float period){// periodは周期
     vec2 n = floor(p);
     vec2 f = fract(p);
     float[4] v;
     for (int j = 0; j < 2; j ++){
         for (int i = 0; i < 2; i++){
-            v[i+2*j] = gtable2(mod(n + vec2(i, j), period), f - vec2(i, j));
+            v[i+2*j] = gtable2(mod(n + vec2(i, j), period), f - vec2(i, j));//mod関数で周期性を持たせたハッシュ値
         }
     }
     f = f * f * f * (10.0 - 15.0 * f + 6.0 * f * f);
