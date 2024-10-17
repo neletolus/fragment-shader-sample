@@ -4,6 +4,7 @@ precision highp float;
 
 out vec4 fragColor;
 uniform vec2 u_resolution;
+uniform float u_time;
 
 void main() {
     vec2 pos = gl_FragCoord.xy / u_resolution.xy;
