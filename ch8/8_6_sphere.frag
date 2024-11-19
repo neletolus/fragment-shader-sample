@@ -4,11 +4,19 @@ precision highp int;
 out vec4 fragColor;
 uniform float u_time;
 uniform vec2 u_resolution;
+
+float sdPlane( vec3 p, vec3 n, float h )
+{
+  // 3d空間内の点と平面の法線ベクトルの内積をとり、オフセットを足す
+  return dot(p,n) + h;
+}
+
 float sphereSDF(vec3 p){
     return length(p) - 1.0;
 }
 float sceneSDF(vec3 p){
-    return sphereSDF(p);
+    p.xy = abs(p.xy);
+    return sdPlane(p, vec3(1.0, 1.0, 0.0),-1.0);
 }
 vec3 gradSDF(vec3 p){
     float eps = 0.001;
@@ -21,8 +29,8 @@ vec3 gradSDF(vec3 p){
 void main(){
     vec2 p = (gl_FragCoord.xy * 2.0 - u_resolution) / min(u_resolution.x, u_resolution.y);
     
-    vec3 cPos = vec3(0.0, 0.0, 2.0);
-    vec3 cDir = vec3(0.0, 0.0, - 1.0);
+    vec3 cPos = vec3(0.0, 1.0, 3.0);
+    vec3 cDir = vec3(0.0, 0.0, -1.0);
     vec3 cUp = vec3(0.0, 1.0, 0.0);
     vec3 cSide = cross(cDir, cUp);
     
